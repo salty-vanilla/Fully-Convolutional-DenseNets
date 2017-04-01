@@ -19,7 +19,9 @@ class BatchLogger(keras.callbacks.CSVLogger):
         super().__init__(file_path)
         self.on_epoch_end = keras.callbacks.Callback.on_epoch_end
 
-        os.makedirs(os.path.dirname(file_path), exist_ok=True)
+        dst_dir = os.path.dirname(file_path)
+        if dst_dir is not '':
+            os.makedirs(dst_dir, exist_ok=True)
 
     def on_batch_end(self, batch, logs=None):
         def handle_value(k):
@@ -51,7 +53,9 @@ class ModelSaver(keras.callbacks.ModelCheckpoint):
         super().__init__(file_path, verbose=verbose)
         self.save_freq = save_freq
 
-        os.makedirs(os.path.dirname(file_path), exist_ok=True)
+        dst_dir = os.path.dirname(file_path)
+        if dst_dir is not '':
+            os.makedirs(dst_dir, exist_ok=True)
 
     def on_epoch_end(self, epoch, logs=None):
         if epoch % self.save_freq == 0:

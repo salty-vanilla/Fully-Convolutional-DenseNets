@@ -72,11 +72,13 @@ def main():
                                 samples_per_epoch=train_gen.data_num,
                                 epochs=nb_epoch,
                                 validation_data=valid_gen.next_batch(batch_size),
+                                validation_steps=1,
                                 callbacks=callbacks)
     else:
         dense_fcn.fit_generator(train_gen.next_batch(batch_size),
                                 samples_per_epoch=train_gen.data_num,
                                 epochs=nb_epoch,
+                                validation_steps=1,
                                 callbacks=callbacks)
 
     dense_fcn.save_weights("dense_fcn.hdf5")

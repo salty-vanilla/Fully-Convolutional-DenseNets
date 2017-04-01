@@ -4,20 +4,37 @@ from PIL import Image
 import math
 import numpy as np
 from keras import backend as K
-
+from keras.preprocessing.image import Iterator
 
 image_ext = 'jpg'
 label_ext = 'png'
 
 
-class DataGenerator:
-    def __init__(self, file_names, image_dir, label_dir, size, nb_classes):
+class DataIterator(Iterator):
+    def __init__(self, file_names, image_dir, label_dir, size, nb_classes, batch_size, shuffle, seed=None):
         self.image_dir = image_dir
         self.label_dir = label_dir
         self.names = file_names
         self.size = size
         self.nb_classes = nb_classes
         self.data_num = len(self.names)
+        super().__init__(self.data_num, batch_size, shuffle, seed)
+
+    def next(self):
+        if self.shuffle:
+            np.random.shuffle(self.names)
+        image_paths = [os.path.join(self.image_dir, name + '.' + image_ext) for name in self.names]
+        label_paths = [os.path.join(self.label_dir, name + '.' + label_ext) for name in self.names]
+
+        max_iter = math.ceil(len(image_paths) / self.batch_size)
+        for iter_ in range(max_iter):
+            image_path_batch = image_paths[iter_ * self.batch_size: (iter_ + 1) * self.batch_size]
+            label_path_batch = label_paths[iter_ * self.batch_size: (iter_ + 1) * self.batch_size]
+
+            image_batch = np.array([self.load_image(path, mode="data") for path in image_path_batch])
+            label_batch = np.array([self.load_image(path, mode="label") for path in label_path_batch])
+
+            return image_batch, label_batch
 
     def load_image(self, path, mode="original", is_color=True, crop_thr=0.7):
         assert mode in ["original", "data", "label"]
@@ -71,21 +88,21 @@ class DataGenerator:
 
             return one_hot
 
+
+class DataGenerator:
+    def __init__(self, file_names, image_dir, label_dir, size, nb_classes):
+        self.image_dir = image_dir
+        self.label_dir = label_dir
+        self.names = file_names
+        self.size = size
+        self.nb_classes = nb_classes
+        self.data_num = len(self.names)
+
     def next_batch(self, batch_size, is_shuffle=True):
-        if is_shuffle:
-            np.random.shuffle(self.names)
-        image_paths = [os.path.join(self.image_dir, name + '.' + image_ext) for name in self.names]
-        label_paths = [os.path.join(self.label_dir, name + '.' + label_ext) for name in self.names]
-
-        max_iter = math.ceil(len(image_paths) / batch_size)
-        for iter_ in range(max_iter):
-            image_path_batch = image_paths[iter_ * batch_size: (iter_ + 1) * batch_size]
-            label_path_batch = label_paths[iter_ * batch_size: (iter_ + 1) * batch_size]
-
-            image_batch = np.array([self.load_image(path, mode="data") for path in image_path_batch])
-            label_batch = np.array([self.load_image(path, mode="label") for path in label_path_batch])
-
-            yield (image_batch, label_batch)
+        return DataIterator(file_names=self.names,
+                            image_dir=self.image_dir, label_dir=self.label_dir,
+                            size=self.size, nb_classes=self.nb_classes,
+                            batch_size=batch_size, shuffle=is_shuffle)
 
 
 def crop_image(image, size, resample=PIL.Image.BILINEAR):

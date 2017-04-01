@@ -7,36 +7,40 @@ try:
     import cPickle as pickle
 except:
     import pickle
+import csv
+from collections import deque
+from collections import OrderedDict
+from collections import Iterable
 
-class HistorySaver(keras.callbacks.Callback):
-    '''Callback that records events
-    into a `History` object.
-    This callback is automatically applied to
-    every Keras model. The `History` object
-    gets returned by the `fit` method of models.
-    '''
 
-    def __init__(self, dst_path):
-        self.path = dst_path
+class BatchLogger(keras.callbacks.CSVLogger):
+    def __init__(self, file_path):
+        super().__init__(file_path)
+        self.on_epoch_end = keras.callbacks.Callback.on_epoch_end
 
-    def on_train_begin(self, logs={}):
-        self.epoch = []
-        self.history = {}
+    def on_batch_end(self, batch, logs=None):
+        def handle_value(k):
+            is_zero_dim_ndarray = isinstance(k, np.ndarray) and k.ndim == 0
+            if isinstance(k, Iterable) and not is_zero_dim_ndarray:
+                return '"[%s]"' % (', '.join(map(str, k)))
+            else:
+                return k
 
-    def on_epoch_end(self, epoch, logs={}):
-        self.epoch.append(epoch)
-        for k, v in logs.items():
-            self.history.setdefault(k, []).append(v)
+        if not self.writer:
+            self.keys = sorted(logs.keys())
 
-        loss = self.history['loss']
-        val_loss = self.history['val_loss']
-        acc = self.history["acc"]
-        val_acc = self.history["val_acc"]
+            class CustomDialect(csv.excel):
+                delimiter = self.sep
 
-        result = (loss, val_loss, acc, val_acc)
-        save_file = open(self.path, "wb")
-        pickle.dump(result, save_file, -1)
-        save_file.close()
+            self.writer = csv.DictWriter(self.csv_file,
+                                         fieldnames=['batch'] + self.keys, dialect=CustomDialect)
+            if self.append_header:
+                self.writer.writeheader()
+
+        row_dict = OrderedDict({'batch': batch})
+        row_dict.update((key, handle_value(logs[key])) for key in self.keys)
+        self.writer.writerow(row_dict)
+        self.csv_file.flush()
 
 
 class ModelCheckpointEx(keras.callbacks.ModelCheckpoint):
@@ -47,3 +51,67 @@ class ModelCheckpointEx(keras.callbacks.ModelCheckpoint):
     def on_epoch_end(self, epoch, logs={}):
         if epoch % self.save_freq == 0:
             super(ModelCheckpointEx, self).on_epoch_end(epoch, logs=logs)
+
+
+def test():
+    '''Trains a simple deep NN on the MNIST dataset.
+    Gets to 98.40% test accuracy after 20 epochs
+    (there is *a lot* of margin for parameter tuning).
+    2 seconds per epoch on a K520 GPU.
+    '''
+
+    import keras
+    from keras.datasets import mnist
+    from keras.models import Sequential
+    from keras.layers import Dense, Dropout
+    from keras.optimizers import RMSprop
+
+    batch_size = 128
+    num_classes = 10
+    epochs = 20
+
+    # the data, shuffled and split between train and test sets
+    (x_train, y_train), (x_test, y_test) = mnist.load_data()
+
+    x_train = x_train.reshape(60000, 784)
+    x_test = x_test.reshape(10000, 784)
+    x_train = x_train.astype('float32')
+    x_test = x_test.astype('float32')
+    x_train /= 255
+    x_test /= 255
+    print(x_train.shape[0], 'train samples')
+    print(x_test.shape[0], 'test samples')
+
+    # convert class vectors to binary class matrices
+    y_train = keras.utils.to_categorical(y_train, num_classes)
+    y_test = keras.utils.to_categorical(y_test, num_classes)
+
+    model = Sequential()
+    model.add(Dense(512, activation='relu', input_shape=(784,)))
+    model.add(Dropout(0.2))
+    model.add(Dense(512, activation='relu'))
+    model.add(Dropout(0.2))
+    model.add(Dense(10, activation='softmax'))
+
+    model.summary()
+
+    callbacks = [BatchLogger("temp.csv")]
+
+    model.compile(loss='categorical_crossentropy',
+                  optimizer=RMSprop(),
+                  metrics=['accuracy'])
+
+    history = model.fit(x_train, y_train,
+                        batch_size=batch_size,
+                        epochs=epochs,
+                        verbose=1,
+                        validation_data=(x_test, y_test),
+                        callbacks=callbacks)
+
+    score = model.evaluate(x_test, y_test, verbose=0)
+    print('Test loss:', score[0])
+    print('Test accuracy:', score[1])
+
+
+if __name__ == "__main__":
+    test()

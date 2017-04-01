@@ -25,7 +25,7 @@ def main():
     parser.add_argument('--channel', '-ch', type=int, default=3)
     parser.add_argument('--batch_size', '-b', type=int, default=10)
     parser.add_argument('--nb_epoch', '-e', type=int, default=30)
-    parser.add_argument('--nb_classes', 'cl', type=int, default=21)
+    parser.add_argument('--nb_classes', '-cl', type=int, default=21)
     parser.add_argument('--param_dir', '-pd', type=str, default="./params")
 
     args = parser.parse_args()

@@ -21,7 +21,7 @@ def main():
     parser.add_argument('--valid_image_dir', '-vid', type=str, default=None)
     parser.add_argument('--valid_label_dir', '-vld', type=str, default=None)
     parser.add_argument('--width', '-w', type=int, default=224)
-    parser.add_argument('--height', '-h', type=int, default=224)
+    parser.add_argument('--height', '-ht', type=int, default=224)
     parser.add_argument('--channel', '-ch', type=int, default=3)
     parser.add_argument('--batch_size', '-b', type=int, default=10)
     parser.add_argument('--nb_epoch', '-e', type=int, default=30)

@@ -2,6 +2,7 @@
 
 from __future__ import print_function
 import numpy as np
+import os
 import keras.callbacks
 try:
     import cPickle as pickle
@@ -17,6 +18,8 @@ class BatchLogger(keras.callbacks.CSVLogger):
     def __init__(self, file_path):
         super().__init__(file_path)
         self.on_epoch_end = keras.callbacks.Callback.on_epoch_end
+
+        os.makedirs(os.path.dirname(file_path), exist_ok=True)
 
     def on_batch_end(self, batch, logs=None):
         def handle_value(k):
@@ -47,6 +50,8 @@ class ModelSaver(keras.callbacks.ModelCheckpoint):
     def __init__(self, file_path, verbose=0, save_freq=1):
         super().__init__(file_path, verbose=verbose)
         self.save_freq = save_freq
+
+        os.makedirs(os.path.dirname(file_path), exist_ok=True)
 
     def on_epoch_end(self, epoch, logs=None):
         if epoch % self.save_freq == 0:

@@ -6,6 +6,10 @@ import numpy as np
 from keras import backend as K
 
 
+image_ext = 'jpg'
+label_ext = 'png'
+
+
 class DataGenerator:
     def __init__(self, file_names, image_dir, label_dir, size, nb_classes):
         self.image_dir = image_dir
@@ -70,8 +74,8 @@ class DataGenerator:
     def next_batch(self, batch_size, is_shuffle=True):
         if is_shuffle:
             np.random.shuffle(self.names)
-        image_paths = [os.path.join(self.image_dir, name) for name in self.names]
-        label_paths = [os.path.join(self.label_dir, name) for name in self.names]
+        image_paths = [os.path.join(self.image_dir, name + '.' + image_ext) for name in self.names]
+        label_paths = [os.path.join(self.label_dir, name + '.' + label_ext) for name in self.names]
 
         max_iter = math.ceil(len(image_paths) / batch_size)
         for iter_ in range(max_iter):

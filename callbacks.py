@@ -43,14 +43,25 @@ class BatchLogger(keras.callbacks.CSVLogger):
         self.csv_file.flush()
 
 
-class ModelCheckpointEx(keras.callbacks.ModelCheckpoint):
-    def __init__(self, dst_path, verbose=0, save_freq=1):
-        super(ModelCheckpointEx, self).__init__(dst_path, verbose=verbose)
+class ModelSaver(keras.callbacks.ModelCheckpoint):
+    def __init__(self, file_path, verbose=0, save_freq=1):
+        super().__init__(file_path, verbose=verbose)
         self.save_freq = save_freq
 
-    def on_epoch_end(self, epoch, logs={}):
+    def on_epoch_end(self, epoch, logs=None):
         if epoch % self.save_freq == 0:
-            super(ModelCheckpointEx, self).on_epoch_end(epoch, logs=logs)
+            super().on_epoch_end(epoch, logs=logs)
+
+
+# TODO segmentation用に作る
+class Visualizer(keras.callbacks.Callback):
+    def __init__(self, x):
+        super().__init__()
+        self.x = x
+
+    def on_epoch_end(self, epoch, logs=None):
+        predict = self.model.predict(self.x)
+        print(predict.shape)
 
 
 def test():
@@ -95,7 +106,7 @@ def test():
 
     model.summary()
 
-    callbacks = [BatchLogger("temp.csv")]
+    callbacks = [Visualizer(x=x_test)]
 
     model.compile(loss='categorical_crossentropy',
                   optimizer=RMSprop(),

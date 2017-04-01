@@ -13,6 +13,7 @@ class DataGenerator:
         self.names = file_names
         self.size = size
         self.nb_classes = nb_classes
+        self.data_num = len(self.names)
 
     def load_image(self, path, mode="original", is_color=True, crop_thr=0.7):
         assert mode in ["original", "data", "label"]

@@ -60,12 +60,12 @@ def main():
     opt = Adam(lr=1e-5, beta_1=0.1)
     dense_fcn.compile(opt, 'categorical_crossentropy', metrics=['accuracy'])
 
-    train_names = [name for name in open(train_list).readlines()]
+    train_names = [name.rstrip('\r\n') for name in open(train_list).readlines()]
     train_gen = DataGenerator(file_names=train_names, image_dir=train_image_dir, label_dir=train_label_dir,
                               size=(width, height), nb_classes=nb_classes)
 
     if valid_list is not None:
-        valid_names = [name for name in open(valid_list).readlines()]
+        valid_names = [name.rstrip('\r\n') for name in open(valid_list).readlines()]
         valid_gen = DataGenerator(file_names=valid_names, image_dir=valid_image_dir, label_dir=valid_label_dir,
                                   size=(width, height), nb_classes=nb_classes)
         dense_fcn.fit_generator(train_gen.next_batch(batch_size),

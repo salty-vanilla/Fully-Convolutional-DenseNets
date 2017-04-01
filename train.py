@@ -53,10 +53,12 @@ def main():
     input_shape = (height, width, channel) if K.image_dim_ordering() == 'tf' \
         else (channel, height, width)
 
-    dense_fcn = DenseNetFCN(input_shape)
+    dense_fcn = DenseNetFCN(input_shape, nb_dense_block=5, growth_rate=16,
+                            nb_layers_per_block=4, upsampling_type='upsampling',
+                            classes=nb_classes, activation='softmax')
 
     opt = Adam(lr=1e-5, beta_1=0.1)
-    dense_fcn.compile(opt, 'categorical_cross_entropy', metrics=['accuracy'])
+    dense_fcn.compile(opt, 'categorical_crossentropy', metrics=['accuracy'])
 
     train_names = [name for name in open(train_list).readlines()]
     train_gen = DataGenerator(file_names=train_names, image_dir=train_image_dir, label_dir=train_label_dir,

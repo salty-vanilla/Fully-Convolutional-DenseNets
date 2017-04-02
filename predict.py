@@ -3,6 +3,7 @@ from keras.models import model_from_json
 from densenet_fc import DenseNetFCN
 from keras import backend as K
 import argparse
+import numpy as np
 
 
 width = 224
@@ -34,12 +35,16 @@ def main():
     # jsonからロードできない ・・・
     model.load_weights(model_weights)
 
-    test_names = [name.rstrip('\r\n') for name in open(test_list).readlines()]
+    test_names = [name.rstrip('\r\n') for name in open(test_list).readlines()][:50]
     test_generator = DataGenerator(file_names=test_names, image_dir=test_image_dir, label_dir=test_label_dir,
                                    size=(width, height), nb_classes=nb_classes)
 
-    datas = test_generator.next_batch(len(test_list))
-    print(datas)
+    images, labels = test_generator.next_batch(len(test_names)).next()
+    predicted = model.predict(images, batch_size=10)
+
+    np.save('predicted.npy', predicted)
+    np.save('image.npy', images)
+    np.save('label.py', labels)
 
 
 if __name__ == "__main__":

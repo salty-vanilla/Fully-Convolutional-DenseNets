@@ -24,7 +24,7 @@ def main():
     parser.add_argument('--height', '-ht', type=int, default=224)
     parser.add_argument('--channel', '-ch', type=int, default=3)
     parser.add_argument('--batch_size', '-b', type=int, default=10)
-    parser.add_argument('--nb_epoch', '-e', type=int, default=30)
+    parser.add_argument('--nb_epoch', '-e', type=int, default=300)
     parser.add_argument('--nb_classes', '-cl', type=int, default=21)
     parser.add_argument('--param_dir', '-pd', type=str, default="./params")
 
@@ -57,7 +57,7 @@ def main():
                             nb_layers_per_block=4, upsampling_type='upsampling',
                             classes=nb_classes, activation='softmax')
 
-    opt = Adam(lr=1e-5, beta_1=0.1)
+    opt = Adam(lr=1e-3, beta_1=0.1)
     dense_fcn.compile(opt, 'categorical_crossentropy', metrics=['accuracy'])
 
     train_names = [name.rstrip('\r\n') for name in open(train_list).readlines()]

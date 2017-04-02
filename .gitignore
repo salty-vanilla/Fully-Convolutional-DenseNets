@@ -1,3 +1,6 @@
 .idea/
 .idea/**
 __pycache__/
+dataset/
+params/
+

@@ -57,6 +57,8 @@ def main():
                             nb_layers_per_block=4, upsampling_type='upsampling',
                             classes=nb_classes, activation='softmax')
 
+    dense_fcn.to_json()
+
     opt = Adam(lr=1e-3, beta_1=0.1)
     dense_fcn.compile(opt, 'categorical_crossentropy', metrics=['accuracy'])
 

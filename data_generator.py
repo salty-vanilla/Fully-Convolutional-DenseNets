@@ -1,7 +1,6 @@
 import os
 import PIL
 from PIL import Image
-import math
 import numpy as np
 from keras import backend as K
 from keras.preprocessing.image import Iterator
@@ -18,23 +17,19 @@ class DataIterator(Iterator):
         self.size = size
         self.nb_classes = nb_classes
         self.data_num = len(self.names)
+        self.image_paths = np.array([os.path.join(self.image_dir, name + '.' + image_ext) for name in self.names])
+        self.label_paths = np.array([os.path.join(self.label_dir, name + '.' + label_ext) for name in self.names])
         super().__init__(self.data_num, batch_size, shuffle, seed)
 
     def next(self):
-        if self.shuffle:
-            np.random.shuffle(self.names)
-        image_paths = [os.path.join(self.image_dir, name + '.' + image_ext) for name in self.names]
-        label_paths = [os.path.join(self.label_dir, name + '.' + label_ext) for name in self.names]
+        with self.lock:
+            index_array, current_index, current_batch_size = next(self.index_generator)
 
-        max_iter = math.ceil(len(image_paths) / self.batch_size)
-        for iter_ in range(max_iter):
-            image_path_batch = image_paths[iter_ * self.batch_size: (iter_ + 1) * self.batch_size]
-            label_path_batch = label_paths[iter_ * self.batch_size: (iter_ + 1) * self.batch_size]
-
-            image_batch = np.array([self.load_image(path, mode="data") for path in image_path_batch])
-            label_batch = np.array([self.load_image(path, mode="label") for path in label_path_batch])
-
-            return image_batch, label_batch
+        image_path_batch = self.image_paths[index_array]
+        label_path_batch = self.label_paths[index_array]
+        image_batch = np.array([self.load_image(path, mode="data") for path in image_path_batch])
+        label_batch = np.array([self.load_image(path, mode="label") for path in label_path_batch])
+        return image_batch, label_batch
 
     def load_image(self, path, mode="original", is_color=True, crop_thr=0.7):
         assert mode in ["original", "data", "label"]
